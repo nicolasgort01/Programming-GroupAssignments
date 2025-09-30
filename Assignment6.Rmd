@@ -1,0 +1,130 @@
+---
+title: "Assignment 5: Cereals"
+author: |
+  | Nicolas, Maggie, Avel
+date: "Sep 31, 2025"
+output:
+  pdf_document
+---
+
+```{r setup, message = FALSE, warning = FALSE, echo = FALSE}
+library(dplyr)
+library(tidyverse)
+library(rio)
+library(ggplot2)
+library(tidyr)
+library(forcats)
+```
+
+```{r bikes}
+bikes <- read.csv("Bikes_Washington.csv")
+str(bikes)
+```
+
+Task A
+```{r}
+bikes$weather_lbs <- factor(bikes$weathersit,
+                           levels = c(1, 2, 3),
+                           labels = c("Clear/Partly Cloudy", 
+                                      "Mist + Cloudy",
+                                      "Light Rain/Snow + Thunderstorm"))
+
+ggplot(bikes, aes(x = cnt, fill = weather_lbs)) +
+  geom_density() +
+  scale_fill_brewer() +
+  labs(title = "Distribution of Bike Rentals by Weather Condition", x = "Total Bike Rental", 
+       y = "Density", fill = "Weather Situation") +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold", hjust = 0.5),
+        legend.position = "bottom",
+        panel.grid.minor = element_blank())
+
+```
+
+Task B
+```{r}
+bikes$dteday <- as.Date(bikes$dteday)
+
+bike_2012 <- bikes %>%
+  filter(year(bikes$dteday) == 2012)
+
+#starting jan 2012
+bike_2012 <- bike_2012 %>%
+  mutate(week_num = as.numeric(ceiling((bike_2012$dteday - as.Date("2012-01-01")) / 7)) + 1)
+
+#by week
+weekly_data <- bike_2012 %>%
+  group_by(week_num) %>%
+  summarize(
+    total_cnt = sum(cnt),
+    total_casual = sum(casual),
+    total_registered = sum(registered)
+  ) %>%
+  pivot_longer(cols = c(total_cnt, total_casual, total_registered),
+               names_to = "user_types",
+               values_to = "rentals"
+  )
+
+#label
+weekly_data$user_types <- factor(weekly_data$user_types,
+                                 levels = c("total_cnt", "total_casual", "total_registered"),
+                                 labels = c("Total Rentals", "Total Casuals", "Total Registered"))
+
+ggplot(weekly_data, aes(x = week_num, y = rentals, color = user_types, linetype = user_types)) +
+  geom_line(linewidth = 1) +
+  scale_color_brewer(palette = "Blues", direction = 1) +
+  scale_linetype_manual(values = c("Total Rentals" = "solid",
+                          "Total Casuals" = "dashed",
+                          "Total Registered" = "dotted")) +
+  labs(title = "Weekly Bike Rentals in 2012", x = "Week", y = "Number of Rentals", color = "User Types", linetype = "User Types") +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold", hjust = 0.5),
+        legend.position = "bottom",
+        panel.grid.minor = element_blank())
+```
+
+Task C
+
+```{r}
+#Converting dates first 
+bikes$dteday <- as.Date(bikes$dteday)
+
+#Restrict to 2012 
+bikes2012 <- bikes %>%
+  filter(year(dteday)==2012)
+
+#The proportion and weekday names
+bikes2012 <- bikes2012 %>%
+  mutate(prop_casual = casual / cnt, weekday = wday(dteday, label = TRUE, abbr = FALSE))
+
+#The box plot itself 
+ggplot(bikes2012, aes(x = weekday, y = prop_casual)) +
+  geom_boxplot(fill = "skyblue", alpha = 0.6) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3, colour = "red") +
+  labs(title = "Proportion of Casual Users by Weekday (2012)",
+  x = "Weekday", y = "Proportion Casual") +
+  theme_minimal() + 
+  theme(plot.title = element_text(face = "bold", hjust = 0.5),
+        panel.grid.minor = element_blank())
+```
+
+Task D
+```{r}
+#Denomarlize the temp column
+bikes$temp_celsius <- bikes$temp * 41
+
+#Scatterplot
+cols <- ifelse(bikes$holiday == 1, "red", "blue")
+
+plot(bikes$temp_celsius, bikes$cnt,
+     col = cols,
+     pch = 16,
+     xlab = "Temperature (Celcius)",
+     ylab = "Total Bike Rentals",
+     main = "Bike Rentals vs Temperature")
+legend("topleft",
+       legend = c("Holiday", "Non-holiday"),
+       col = c("red", "blue"),
+       pch = 16)
+```
+
