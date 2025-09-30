@@ -18,7 +18,6 @@ library(forcats)
 
 ```{r bikes}
 bikes <- read.csv("Bikes_Washington.csv")
-str(bikes)
 ```
 
 Task A
