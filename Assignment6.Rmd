@@ -1,5 +1,5 @@
 ---
-title: "Assignment 5: Cereals"
+title: "Assignment 6: Bike Sharing Washington"
 author: |
   | Nicolas, Maggie, Avel
 date: "Sep 31, 2025"
