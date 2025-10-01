@@ -1,7 +1,7 @@
 ---
 title: "Assignment 5: Cereals"
 author: |
-  | Nicolas, Maggie, Avel
+  | Nicolas (780037), Maggie (755273), Avel (781169)
 date: "Sep 31, 2025"
 output:
   pdf_document
@@ -17,7 +17,7 @@ library(forcats)
 
 getwd()
 rm(list = ls())
-data <- import('Cereals.csv')
+data <- import('Data/Cereals.csv')
 ```
 
 
@@ -155,7 +155,7 @@ binwidth <- 5
 means_df <- df2 %>%
   group_by(manufacturer) %>%
   summarize(mean_rating = mean(rating, na.rm = TRUE), .groups = "drop") %>%
-  mutate(label = paste0("Mean = ", round(mean_rating, 1)))
+  mutate(label = as.character(round(mean_rating, 1)))
 
 breaks <- seq(floor(min(df2$rating, na.rm = TRUE)),
               ceiling(max(df2$rating, na.rm = TRUE)),
@@ -176,7 +176,7 @@ means_df2 <- means_df %>%
   left_join(max_counts, by = "manufacturer")
 y_upper <- ceiling(max(means_df2$max_count) * 1.15)
 
-# Actual Plot (Only put this chunk in R Markdown.)
+# Actual Plot
 
 ggplot(df2, aes(x = rating)) +
   geom_histogram(

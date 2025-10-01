@@ -1,7 +1,7 @@
 ---
 title: "Assignment 6: Bike Sharing Washington"
 author: |
-  | Nicolas, Maggie, Avel
+  |  Nicolas (780037), Maggie (755273), Avel (781169)
 date: "Sep 31, 2025"
 output:
   pdf_document
@@ -17,7 +17,7 @@ library(forcats)
 ```
 
 ```{r bikes}
-bikes <- read.csv("Bikes_Washington.csv")
+bikes <- read.csv("Data/Bikes_Washington.csv")
 ```
 
 Task A
@@ -33,7 +33,7 @@ ggplot(bikes, aes(x = cnt, fill = weather_lbs)) +
   scale_fill_brewer(palette = "Set2") +
   labs(title = "Distribution of Bike Rentals by Weather Condition", x = "Total Bike Rental", 
        y = "Density", fill = "Weather Situation") +
-  theme_minimal() +
+  theme_classic() +
   theme(plot.title = element_text(face = "bold", hjust = 0.5),
         legend.position = "bottom",
         panel.grid.minor = element_blank())
@@ -76,7 +76,7 @@ ggplot(weekly_data, aes(x = week_num, y = rentals, color = user_types, linetype 
                           "Total Casuals" = "dashed",
                           "Total Registered" = "dashed")) +
   labs(title = "Weekly Bike Rentals in 2012", x = "Week", y = "Number of Rentals", color = "User Types", linetype = "User Types") +
-  theme_minimal() +
+  theme_classic() +
   theme(plot.title = element_text(face = "bold", hjust = 0.5),
         legend.position = "bottom",
         panel.grid.minor = element_blank())
@@ -102,7 +102,7 @@ ggplot(bikes2012, aes(x = weekday, y = prop_casual)) +
   stat_summary(fun = mean, geom = "point", shape = 18, size = 3, colour = "#FC8D62") +
   labs(title = "Proportion of Casual Users by Weekday (2012)",
   x = "Weekday", y = "Proportion Casual") +
-  theme_minimal() + 
+  theme_classic() + 
   theme(plot.title = element_text(face = "bold", hjust = 0.5),
         panel.grid.minor = element_blank())
 ```
