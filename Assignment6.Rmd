@@ -30,7 +30,7 @@ bikes$weather_lbs <- factor(bikes$weathersit,
 
 ggplot(bikes, aes(x = cnt, fill = weather_lbs)) +
   geom_density() +
-  scale_fill_brewer() +
+  scale_fill_brewer(palette = "Set2") +
   labs(title = "Distribution of Bike Rentals by Weather Condition", x = "Total Bike Rental", 
        y = "Density", fill = "Weather Situation") +
   theme_minimal() +
@@ -71,10 +71,10 @@ weekly_data$user_types <- factor(weekly_data$user_types,
 
 ggplot(weekly_data, aes(x = week_num, y = rentals, color = user_types, linetype = user_types)) +
   geom_line(linewidth = 1) +
-  scale_color_brewer(palette = "Blues", direction = 1) +
+  scale_color_brewer(palette = "Set2", direction = 1) +
   scale_linetype_manual(values = c("Total Rentals" = "solid",
                           "Total Casuals" = "dashed",
-                          "Total Registered" = "dotted")) +
+                          "Total Registered" = "dashed")) +
   labs(title = "Weekly Bike Rentals in 2012", x = "Week", y = "Number of Rentals", color = "User Types", linetype = "User Types") +
   theme_minimal() +
   theme(plot.title = element_text(face = "bold", hjust = 0.5),
@@ -98,8 +98,8 @@ bikes2012 <- bikes2012 %>%
 
 #The box plot itself 
 ggplot(bikes2012, aes(x = weekday, y = prop_casual)) +
-  geom_boxplot(fill = "skyblue", alpha = 0.6) +
-  stat_summary(fun = mean, geom = "point", shape = 18, size = 3, colour = "red") +
+  geom_boxplot(fill = "#8DA0CB", alpha = 0.6) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3, colour = "#FC8D62") +
   labs(title = "Proportion of Casual Users by Weekday (2012)",
   x = "Weekday", y = "Proportion Casual") +
   theme_minimal() + 
@@ -113,7 +113,7 @@ Task D
 bikes$temp_celsius <- bikes$temp * 41
 
 #Scatterplot
-cols <- ifelse(bikes$holiday == 1, "red", "blue")
+cols <- ifelse(bikes$holiday == 1, "#FC8D62", "#8DA0CB")
 
 plot(bikes$temp_celsius, bikes$cnt,
      col = cols,
@@ -126,4 +126,3 @@ legend("topleft",
        col = c("red", "blue"),
        pch = 16)
 ```
-
