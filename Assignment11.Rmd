@@ -1,0 +1,185 @@
+---
+title: "Assignment 11"
+author: 'Avel Rizal Nasution,Nicolas Gonzalez Gort, Maggie'
+date: "2025-10-16"
+output: pdf_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.width=10, fig.height=6)
+library(rvest)
+library(dplyr)
+library(stringr)
+library(knitr)
+library(kableExtra)
+library(ggplot2)
+library(forcats)
+```
+
+```{r scrape}
+#Question 1
+url <- "https://en.wikipedia.org/wiki/List_of_World_Series_champions"
+
+#Read the page
+page <- read_html(url)
+
+#Extracting all tables with the class "wikitable"
+tables <- page %>% html_nodes("table.wikitable") %>% html_table(fill = TRUE)
+
+#Making a table which contains winning and losing 
+tab_idx <- which(sapply(tables, function(t)
+  any(grepl("^Year", names(t), ignore.case = TRUE)) &
+  any(grepl("Winning", names(t), ignore.case = TRUE))
+))
+
+if (length(tab_idx) == 0) tab_idx <- 1
+tab_raw <- tables[[tab_idx]]
+
+#Verifying by displaying the names of columns from the wikipedia table
+names(tab_raw)
+
+#Defining tab1
+tab1 <- tab_raw
+```
+
+```{r Q2}
+
+#Question 2
+tab1 <- tab_raw
+
+#Standardizing the column names 
+names(tab1) <- names(tab1) %>%
+  str_replace_all("\\s+", " ") %>%
+  str_trim()
+
+# FIX: Make column names unique (avoids "Names must be unique" error)
+names(tab1) <- make.unique(names(tab1))
+
+#Making the relevant columns for the table
+year_col <- names(tab1)[grepl("^Year", names(tab1), ignore.case = TRUE)][1]
+winning_col <- names(tab1)[grepl("Winning", names(tab1), ignore.case = TRUE)][1]
+losing_col  <- names(tab1)[grepl("Losing", names(tab1), ignore.case = TRUE)][1]
+
+#Select key columns
+tab1 <- tab1 %>%
+  select(Year = !!sym(year_col),
+         Winning = !!sym(winning_col),
+         Losing = !!sym(losing_col),
+         dplyr::everything())
+
+#Cleaning the year columns
+tab1$Year <- tab1$Year %>%
+  str_replace_all("\\[.*?\\]", "") %>%
+  str_trim()
+
+#Replacing years without series games with NA
+not_played_idx <- grepl("not played", tab1$Winning, ignore.case = TRUE) |
+                  grepl("not played", tab1$Losing, ignore.case = TRUE) |
+                  grepl("cancelled", tab1$Winning, ignore.case = TRUE) |
+                  grepl("cancelled", tab1$Losing, ignore.case = TRUE)
+
+tab1$Winning[not_played_idx] <- NA
+tab1$Losing[not_played_idx]  <- NA
+
+#Using strsplit to split and clean winning teams table with looping
+split_winners <- strsplit(tab1$Winning, "\\(", fixed = FALSE)
+for (i in seq_along(split_winners)) {
+  tab1$Winning[i] <- str_trim(split_winners[[i]][1])
+}
+
+#doing the same for the losing team
+split_losers <- strsplit(tab1$Losing, "\\(", fixed = FALSE)
+for (i in seq_along(split_losers)) {
+  tab1$Losing[i] <- str_trim(split_losers[[i]][1])
+}
+
+#Removing bracket notes such as [W], [N] and punctuations 
+tab1$Winning <- gsub("\\[.*?\\]", "", tab1$Winning)
+tab1$Losing  <- gsub("\\[.*?\\]", "", tab1$Losing)
+tab1$Winning <- str_trim(gsub("[,;:\\-\\–]+\\s*$", "", tab1$Winning))
+tab1$Losing  <- str_trim(gsub("[,;:\\-\\–]+\\s*$", "", tab1$Losing))
+
+#Add helper column to mark valid series
+tab1 <- tab1 %>%
+  mutate(had_series = !(is.na(Winning) & is.na(Losing)))
+
+#Displaying the last 20 rows 
+last20 <- tail(tab1, 20)
+
+kable(last20[, c("Year", "Winning", "Losing")],
+      caption = "Last 20 rows of the cleaned World Series data") %>%
+  kable_styling(latex_options = c("striped", "hold_position")) %>%
+  footnote(general = "Team names cleaned using strsplit(); years without World Series marked as NA.")
+```
+#Table 1 shows after cleaning the dataset, we can see from the table several patterns in the last 20 years of World Series results. The **Houston Astros** and **Los Angeles Dodgers** appear multiple times, showing consistent performance in recent seasons. The **Boston Red Sox** and **San Francisco Giants** have also won several championships within the last 2 decades. A few teams, such as **Philladelphia Philles** and **Kansas City Royals**, appear irregularly, suggesting occasional strong seasons rather than long-term dominance. In the recent decades there aren't any years without  world series games which indicates that all World Series events were played. Overall, recent world series historically shows a concentration of champions among a few powerhouse teams, with only occasional appearances from other franchises.    
+```{r Q3_counts}
+#Question 3
+
+#Identifying the wildcard winners using columns that contains [W]
+wildcard_win_idx <- grepl("\\[W\\]", tab1$Winning, ignore.case = TRUE)
+
+#Filtering out the wildcard winners
+tab_no_wild_win <- tab1 %>% filter(!wildcard_win_idx)
+
+#Counting the total wins per team
+wins_by_team <- tab_no_wild_win %>%
+  filter(!is.na(Winning)) %>%
+  count(Winning, name = "Wins") %>%
+  arrange(desc(Wins))
+
+#Counting the total losses per team 
+losses_by_team <- tab_no_wild_win %>%
+  filter(!is.na(Losing)) %>%
+  count(Losing, name = "Losses") %>%
+  arrange(desc(Losses))
+
+#Merging both wins and losses for all teams
+teams <- union(wins_by_team$Winning, losses_by_team$Losing)
+
+wins_full <- tibble(Team = teams) %>%
+  left_join(wins_by_team %>% rename(Team = Winning), by = "Team") %>%
+  mutate(Wins = ifelse(is.na(Wins), 0, Wins))
+
+losses_full <- tibble(Team = teams) %>%
+  left_join(losses_by_team %>% rename(Team = Losing), by = "Team") %>%
+  mutate(Losses = ifelse(is.na(Losses), 0, Losses))
+
+team_stats <- wins_full %>%
+  left_join(losses_full, by = "Team") %>%
+  arrange(desc(Wins))
+
+#Determining the common x and y plots 
+max_count <- max(c(team_stats$Wins, team_stats$Losses), na.rm = TRUE)
+y_lim <- c(0, max_count + 1)
+
+#Ordering teams by number of wins 
+team_stats <- team_stats %>% mutate(Team = fct_reorder(Team, Wins))
+
+#Plot 1: Number of games won for each team
+p_wins <- ggplot(team_stats, aes(x = Team, y = Wins)) +
+  geom_col(fill = "#0072B2") +
+  coord_flip() +
+  scale_y_continuous(limits = y_lim, expand = expansion(mult = c(0, 0.05))) +
+  labs(
+    title = "World Series Wins per Team (excluding wildcard winners)",
+    x = "Team", y = "Wins"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(axis.text.y = element_text(size = 8))
+
+#Plot 2: Number of games loss for each team 
+p_losses <- ggplot(team_stats, aes(x = Team, y = Losses)) +
+  geom_col(fill =  "#0072B2") +
+  coord_flip() +
+  scale_y_continuous(limits = y_lim, expand = expansion(mult = c(0, 0.05))) +
+  labs(
+    title = "World Series Losses per Team (excluding wildcard winners)",
+    x = "Team", y = "Losses"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(axis.text.y = element_text(size = 8))
+
+#Displaying the plots 
+p_wins
+p_losses
+```
+From the graphs the most striking patterns were, **New York Yankees** dominance, they clearly dominate both charts having the most World Series wins and also Most losses indicaiting a sustained frequent presence in the championship series. Teams that are ranked high in wins such as **ST Louis Cardinals** and **Boston Red Sox** generally show significantly more wins than losses which reflects a high historical success rate in the World Series. Many teams at the bottom of the chart have very few wins and losses which indicates their minimal historical participation in the series under non-wildcard criteria. 
