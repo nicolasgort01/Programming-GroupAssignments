@@ -1,8 +1,7 @@
 ---
 title: "Airline Quality"
 author: |
-  | Nicolas, Maggie
-  | Avel
+  | Nicolas, Maggie, Avel
 date: "Oct, 2025"
 output: pdf_document
 subtitle: Programming Assignment 12
@@ -40,7 +39,6 @@ parse_overall <- function(x) {
   as.numeric(str_extract(x, "^[0-9]+\\.?[0-9]*"))
 }
 
-# Number formating. 
 parse_reviews <- function(x) {
   x <- str_replace_all(x, "[^0-9]", "")
   as.integer(x)
@@ -68,15 +66,12 @@ airline_ratings
 
 scrape.av <- function(page, airline_name) {
   
-  # Scrape the star ratings
   stars <- page %>%
     html_nodes(".stars .fill") %>%
     html_text()
   
-  # Convert to numeric
   stars_num <- as.numeric(stars)
   
-  # Find where "1,2,3,4,5" sequence first appears
   first_12345_pos <- NA
   for(i in 1:(length(stars_num)-4)) {
     if(all(stars_num[i:(i+4)] == 1:5)) {
@@ -84,16 +79,13 @@ scrape.av <- function(page, airline_name) {
       break
     }
   }
-  
-  # Extract everything before the "12345" sequence
+
   before_12345 <- stars_num[1:(first_12345_pos-1)]
   
-  # Find positions where the next value is 1 (or end of vector)
-  # These are the "peaks" - our category ratings
-  is_peak <- c(before_12345[-1] == 1, TRUE)  # Check if next element is 1
-  avg_ratings <- before_12345[is_peak][1:5]  # Take first 5 peaks
+
+  is_peak <- c(before_12345[-1] == 1, TRUE)  
+  avg_ratings <- before_12345[is_peak][1:5]  
   
-  # Create data frame
   result <- data.frame(
     Airline = airline_name,
     Food_Beverages = avg_ratings[1],
@@ -106,19 +98,16 @@ scrape.av <- function(page, airline_name) {
   return(result)
 }
 
-# Apply to airlines using sapply (more R-like!)
 airlines <- list(
   "KLM Royal Dutch Airlines" = klm,
   "Transavia" = transavia,
   "Air France" = air_france
 )
 
-# Use lapply to apply function to each airline
 avg_list <- lapply(names(airlines), function(name) {
   scrape.av(airlines[[name]], name)
 })
 
-# Combine using do.call
 average_ratings <- do.call(rbind, avg_list)
 
 print(average_ratings)
